@@ -418,6 +418,30 @@ pop esi
 RET 20
 AddString endp 
 
+;receives two zero terminated string offsets in edi and esi and returns 1 in al if they are equal, ecx used as temp storage
+CmpStr proc uses edi esi ecx
+
+lop:
+movzx eax, byte ptr [edi]
+movzx ecx, byte ptr [esi]
+cmp eax, ecx
+jnz	fals
+cmp eax, 0
+jz tru
+inc edi
+inc esi
+jmp lop
+
+fals:
+mov al,0
+jmp done
+
+tru:
+mov al,1
+
+done:
+ret
+CmpStr endp
 
 
 
