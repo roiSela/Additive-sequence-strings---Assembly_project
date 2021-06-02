@@ -68,7 +68,7 @@ mov al,1
 jmp end1
 
 nextStage1: ;now we check if str[0]=='0'
-mov edx , esi[ecx]
+mov edx , [esi+ecx]
 cmp edx,'0'
 jnz final1 ;if its not equal we put 1 in al and were done.
 mov al,0
@@ -114,7 +114,7 @@ mov edx,[ebp+indexToCheck  ] ;puts index in edx
 
 cmp edx,ebx  ;if index >= size ,then clearly ,the function reutrn 0 (invalid input)
 jae badEndofvalfunc 
-mov al,esi[edx] ;if we got here , that means that index is valid and we can put in in al 
+mov al,[esi+edx] ;if we got here , that means that index is valid and we can put in in al 
 sub al,'0' ; we subtract '0' to get the actual numiric value
 jmp endofvalfunc ;we finished the function succefully
 
@@ -179,9 +179,12 @@ ja subStringInvalid ;the jump above command is requested here , because if sum i
 
 ;now after we checked those conditions we can start putting in the target string the requested sub string from input
 mov edi , [ebp+targetString] ;now edi is pointing to the target string , lets refer to it as "res" from now on.
-mov edi[eax],0 ;we put zero at the end of res , (can be done outside the function also )
+mov byte ptr [edi+eax],0 ;we put zero at the end of res , (can be done outside the function also )
 mov eax,0  
-mov edi[eax],esi[edx] ; we put: res[0]=inputString[pos]
+push ecx 
+mov cl, [esi+edx]
+mov  [edi+eax],cl ; we put: res[0]=inputString[pos]
+pop ecx 
 mov eax,[ebp+lenToCheckFromPosition] ;eax = lenToCheckFromPosition
 
 ;the rest will be done in a recursive manner , we need to preapare the variables for the next itaration
