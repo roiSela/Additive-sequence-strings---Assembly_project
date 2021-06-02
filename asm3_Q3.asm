@@ -277,6 +277,150 @@ RET
 reverse_string endp 
 
 
+; Str2D (unsigned int *d, char *StrPtr)
+;   Input parameters:
+; 	  Str -  offset of the string to convert
+;   Output parameters:
+; 	  D - Points to empty DWORD
+Str2D PROC
+    D = 8
+    StrPtr = D + 4
+    push ebp        ;Standard prologue
+    mov ebp,esp
+    push eax        ;Saving registers we use
+    push ebx
+    push esi
+    
+    mov esi,StrPtr[ebp]     ; esi points to first digit
+    mov eax,0       ;Initialize to Zero
+    mov ebx,0       ;pad with zeros
+    push 10         ;needed for MUL
+NextDigit:
+    cmp BYTE PTR[esi],0		;end of the string?
+    jz AfterLoop
+    mul DWORD PTR [esp]  ;eax <-- eax * 10
+    mov bl,[esi]
+    sub bl,'0'      ;Note: we don't check that ascii is digit
+    add eax,ebx
+    inc esi         ;next digit
+    jmp NextDigit
+AfterLoop:
+    mov ebx,D[ebp]  ;the address of the result
+    mov [ebx],eax   ;move eax to that location
+    add esp,4       ;due to the 10 we pushed before
+    pop esi         ;Restore registers
+    pop ebx
+    pop eax
+    pop ebp
+    ret 8
+Str2D ENDP
+
+; D2Str10(unsigned int d, char *StrPtr)
+; Input parameters:
+; 	D -  DWORD to convert
+; Output parameters:
+; 	StrPtr - Points to empty place
+D2str10 PROC
+	D = 8
+	StrPtr = D + 4
+	push ebp        ;Standard prologue
+	mov ebp,esp
+	push ecx        ;Saving registers we use
+	push edx
+	
+	mov ecx,0 	    ;Count for number of digits
+	mov eax,D[ebp]  ;Get the DWORD
+NextDigit:
+	mov edx,0       ;Prepare to DIV
+	push 10         ;Temporary 10
+	div DWORD PTR [esp] ;Divide by 10
+	add esp,4       ;Delete the temporary.
+	                ;It is better either to define it
+	                ;or in the entry to the procedure
+	add edx,'0'     ;Convert the digit to ASCII
+	push dx         ;And save it on stack. (We get t
+	inc ecx         ;Update digits counter
+	cmp eax,0       ;Have we finished?
+	jne NextDigit   ;No. Continue to next digit
+	                ;Yes.
+	mov eax,StrPtr[ebp] ;Get the string pointer
+NextPop:
+	pop dx ;Pop digit
+	mov [eax],dl ;Store digit into string
+	inc eax ;Point to next place
+	loop NextPop ;Do this for all digits
+
+    mov WORD PTR [eax],0A0Dh ; CR-LF to end the line
+    add eax,2
+	mov BYTE PTR [eax],0;Add the terminating null
+	pop edx ;Restore registers
+	pop ecx
+	pop ebp
+	ret 8
+D2str10 ENDP
+
+
+
+;void addstring(char* resultString,char* ptr1,char* ptr2,int len2,int len1)
+;the functions put in resultstring the sum of ptr1 and ptr2 
+;for exapmle: ptr1="12" , ptr2="10" then resultstring="22" 
+AddString PROC
+len1 = 8
+len2 = len1+4
+ptrToStr1=len2+4
+ptrToStr2=ptrToStr1+4
+resultString=ptrToStr2+4
+push ebp        ;Standard prologue
+mov ebp,esp
+
+;Saving registers we use
+push esi 
+push edi 
+push eax
+push ebx
+push ecx       
+push edx
+
+mov esi,[ebp+ptrToStr1] ;now esi=ptr1
+mov edi,[ebp+ptrToStr2] ;edi = ptr2
+mov eax,[ebp+len1] 
+mov ebx,[ebp+len2] 
+
+;first we must compute the decimal value of string 1 and string 2
+;we will do that using the str2D function
+push esi 
+lea ecx,[ebp+len1] 
+push ecx ;ecx will store the decimal value of string1
+call Str2D
+mov ecx,[ebp+len1]
+
+push edi
+lea edx,[ebp+len2] 
+push  edx ;edx will store the decimal value of string1
+call Str2D
+mov edx,[ebp+len2]
+
+add edx,ecx ;now edx = sum of both strings , and ecx is no longer needed
+mov esi,[ebp+resultString] ;now esi=res 
+;now we will put edx in esi using the D2str function
+PUSH esi 
+push edx 
+call D2str10
+
+
+pop edx
+pop ecx
+pop ebx 
+pop eax 
+pop edi 
+pop esi 
+
+RET 20
+AddString endp 
+
+
+
+
 end my_main
 
 
