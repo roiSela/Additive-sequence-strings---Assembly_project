@@ -389,7 +389,7 @@ mov ebx,[ebp+len2]
 ;first we must compute the decimal value of string 1 and string 2
 ;we will do that using the str2D function
 push esi 
-lea ecx,[ebp+len1] 
+lea ecx,[ebp+len1] ;we will put the numiric value of str1 in the stack instead of len1
 push ecx ;ecx will store the decimal value of string1
 call Str2D
 mov ecx,[ebp+len1]
