@@ -24,6 +24,8 @@ INCLUDE ams3_Q3_data.inc
 .data
  header byte "roi sela , ID:208199679 , and Or Othnay ID:315856674 ",10,13,0
  
+ input byte "12345",0
+ 
  
 .code 
 my_main PROC
@@ -32,6 +34,22 @@ mov edx , OFFSET header
 call writeString			;printing the header
 
 
+;when calling this function the stack has the following 5 values (and will be sent in that order):
+;offset of input string
+;input string length
+;position (index) inside the string 
+;length of string to check from this postion 
+;the offset of the target string
+
+push offset input
+push 5
+push 1
+push 2
+push offset res
+call subString
+
+mov edx,offset res
+call writeString
 
 call ExitProcess
 my_main ENDP
@@ -76,12 +94,13 @@ jmp end1
 
 end1:
 ;we need to return the used registers there original value before exiting the function:
-mov esp,ebp ;give esp its oringal value , before restoring ebp
+
 
 pop ebx 
 pop esi
 pop edx
 pop ecx
+mov esp,ebp ;give esp its oringal value , before restoring ebp
 pop ebp
 
 RET 8
@@ -123,10 +142,12 @@ mov al,0
 jmp endofvalfunc
 
 endofvalfunc:
-mov esp,ebp ;give esp its oringal value , before restoring ebp
-pop edx 
-pop ebx 
+
 pop esi
+pop edx
+pop ebx 
+ 
+mov esp,ebp ;give esp its oringal value , before restoring ebp
 pop ebp 
 
 RET 12
@@ -152,7 +173,7 @@ mov ebp ,esp ;base of stack frame
 
 ;lets save the current value of the registers(possible wrong..but the rest is fine i think):
 push esi
-push ebp
+push ebx
 push edx
 push eax 
 push edi 
@@ -174,8 +195,9 @@ jz subStringInvalid
 mov eax,[ebp+lenToCheckFromPosition] ;eax = lenToCheckFromPosition
 add edx ,eax ;now edx=lenToCheckFromPosition+position
 cmp edx,ebx ;now we check the condition mantioned earlier
-sub  edx ,eax ;now edx=position again
 ja subStringInvalid ;the jump above command is requested here , because if sum is greater than len , then its invalid 
+sub  edx ,eax ;now edx=position again
+
 
 ;now after we checked those conditions we can start putting in the target string the requested sub string from input
 mov edi , [ebp+targetString] ;now edi is pointing to the target string , lets refer to it as "res" from now on.
@@ -198,8 +220,12 @@ mov eax,[ebp+lenToCheckFromPosition] ;eax = lenToCheckFromPosition
 dec eax ;len=len-1
 inc edi ;now edi = &(res+1)
 inc esi ;now esi = &(input string+1)
-dec ebp ; length of input string -= 1
+dec ebx ; length of input string -= 1
 ;pos stays the same 
+
+;lets check if len=0;
+cmp eax,0
+jz subStringInvalid
 
 ;now we need to push the elements in a very specific order, and that order is:
 ;offset of input string
@@ -209,7 +235,7 @@ dec ebp ; length of input string -= 1
 ;the offset of the target string
 
 push esi
-push ebp
+push ebx
 push edx
 push eax 
 push edi 
@@ -222,23 +248,23 @@ call subString
 jmp subStringFine 
 
 subStringInvalid:
-mov esp,ebp
 pop edi
 pop eax 
 pop edx
-pop ebp 
+pop ebx 
 pop esi 
+mov esp,ebp
 pop ebp
 
 mov al,0
 ret 20
 subStringFine:
-mov esp,ebp
 pop edi
 pop eax 
 pop edx
-pop ebp 
+pop ebx 
 pop esi 
+mov esp,ebp
 pop ebp
 mov al,1 
 ret 20
@@ -413,7 +439,11 @@ pop ecx
 pop ebx 
 pop eax 
 pop edi 
-pop esi 
+pop esi
+mov esp,ebp
+pop ebp        ;Standard prologue
+
+
 
 RET 20
 AddString endp 
