@@ -473,6 +473,78 @@ done:
 ret
 CmpStr endp
 
+;receives two zero terminated string offsets, a and b in edi and esi and appends b to the end of a.
+; a = [edi], b = [esi]
+PushBack proc uses edi esi eax
+
+;find the end of string a.
+lop:
+movzx eax, byte ptr [edi]
+cmp	eax,0
+jz endofa
+inc edi
+jmp lop
+
+;append b to the end of a.
+endofa:
+movzx eax, byte ptr [esi]
+mov [edi],eax
+cmp eax,0
+jz finish
+inc edi
+inc esi
+jmp endofa
+
+finish:
+ret
+PushBack endp
+
+;receives two zero terminated string offsets, a and b in edi and esi and appends b to the beginning of a.
+; a = [edi], b = [esi]
+PushFront proc uses esi edi eax ebx
+
+;find length of b
+push esi
+mov ebx,0
+lop:
+movzx eax, byte ptr [esi]
+cmp	eax,0
+jz next
+inc esi
+inc ebx;ebx will be the length of b.
+jmp lop
+
+next:
+pop esi
+;swap edi and esi, now a=esi,b=edi
+push esi
+mov esi,edi
+pop edi
+call PushBack ; edi = b = b+a
+
+push edi
+push esi
+copyloop:
+movzx eax, byte ptr [edi]
+mov [esi],eax
+cmp eax,0
+jz finish
+inc edi
+inc esi
+jmp copyloop
+
+
+finish:
+pop esi
+pop edi
+
+lea eax,[edi+ebx]
+mov ebx,0
+mov [eax],ebx;fixing b to be the original string.
+
+ret
+PushFront endp
+
 
 
 end my_main
