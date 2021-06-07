@@ -24,7 +24,8 @@ INCLUDE ams3_Q3_data.inc
 .data
  header byte "roi sela , ID:208199679 , and Or Othnay ID:315856674 ",10,13,0
  
- input byte "12345",0
+ n1 byte "215",0
+ n2 byte "56489",0
  
  
 .code 
@@ -34,19 +35,18 @@ mov edx , OFFSET header
 call writeString			;printing the header
 
 
-;when calling this function the stack has the following 5 values (and will be sent in that order):
-;offset of input string
-;input string length
-;position (index) inside the string 
-;length of string to check from this postion 
-;the offset of the target string
+;void addstring(char* resultString,char* ptr2,char* ptr1,int len2,int len1)
+;the functions put in resultstring the sum of ptr1 and ptr2 
+;for exapmle: ptr1="12" , ptr2="10" then resultstring="22" 
 
-push offset input
-push 5
-push 1
-push 2
 push offset res
-call subString
+push offset n2
+push offset n1
+push 5
+push 2
+call AddString
+
+
 
 mov edx,offset res
 call writeString
@@ -376,8 +376,8 @@ NextPop:
 	inc eax ;Point to next place
 	loop NextPop ;Do this for all digits
 
-    mov WORD PTR [eax],0A0Dh ; CR-LF to end the line
-    add eax,2
+   ; mov WORD PTR [eax],0A0Dh ; CR-LF to end the line
+    ;add eax,2
 	mov BYTE PTR [eax],0;Add the terminating null
 	pop edx ;Restore registers
 	pop ecx
@@ -387,7 +387,7 @@ D2str10 ENDP
 
 
 
-;void addstring(char* resultString,char* ptr1,char* ptr2,int len2,int len1)
+;void addstring(char* resultString,char* ptr2,char* ptr1,int len2,int len1)
 ;the functions put in resultstring the sum of ptr1 and ptr2 
 ;for exapmle: ptr1="12" , ptr2="10" then resultstring="22" 
 AddString PROC
