@@ -545,7 +545,235 @@ mov [eax],ebx;fixing b to be the original string.
 ret
 PushFront endp
 
+;this function gets the origin string address in esi
+;its len in ebx
+;and the addres of the result string in edi
 
+;we return: 1 in al if the origin string is an addetive sequence and 0 else 
+isAddSeq proc uses esi ebx ecx edx
+mov eax,ebx ;now eax=len
+mov cl,2 ;now cl=2
+div cl ;now ah=len/2
+movsx ecx,al ;now ecx=l/2
+mov al,1 ;we want that "al=i"
+mov ah,1 ;we want that "ah=j"
+
+L1:
+push ecx
+;now lets calc (l(len)-i)
+push ebx ;saving ebx 
+
+mov ecx,ebx ;ecx=len
+movsx ebx,al ;ebx=i
+sub ecx,ebx ;now ecx=l-i 
+;now we need to div in 2 
+;--------------------------------------------
+mov bx,ax
+mov ax,cx ;now ax = l-i
+mov cl,2 
+div cl ;now ax = (l-i)/2
+movsx ecx,al ;now ecx = (l-i)/2
+mov ax,bx ;now al=i,ah=j
+;--------------------------------------------
+pop ebx ;now ebx =len again 
+
+mov ah,1 ;we want that "ah=j"
+
+	L2:
+	push esi ;pushing origin string 
+	push ebx ;origin string length
+	push edi ;pushing result string
+	movsx edx,al ;edx = i
+	push edx ;pushing i 
+	movsx edx,ah ;edx = j
+	push edx ;pushing j
+
+	mov edx,0
+	mov dl,al
+	add dl,ah ;now edx = i+j
+	push edx ;pushing i+j
+	mov dx,ax
+	
+	call chkAddition ;now al=1 if the string is additive seq and 0 else
+
+	cmp al,0
+	jz continue
+	;if al =1 we need to do:
+	; adding first and second number at
+	; front of result list
+	;res.push_front(num.substr(i, j));
+	;res.push_front(num.substr(0, i));
+	;return res;
+	;and that is what the function pushToRes will do 
+	push esi ;pushing origin string 
+	push ebx ;origin string length
+	push edi ;pushing result string
+	movsx eax , dl ;eax=i 
+	push  eax ;push i
+	movsx eax , dh ;eax=j 
+	push  eax ;push j
+	call pushToRes
+	mov al,1
+	ret ;were done
+	
+	continue:
+	mov ax,dx ;restoring dx because chkaddition changed it
+	inc ah
+	LOOP L2
+
+
+
+inc al ;i++
+pop ecx
+LOOP L1
+ 
+; If code execution reaches here, then string
+; doesn't have any additive sequence
+
+mov al,0
+ret
+isAddSeq endp
+
+;this function gets throgh the stack in this order the following elements:
+;origin string
+;len of origin string
+;res string
+;i
+;j
+
+;this function  adding first and second number at
+; front of result list
+
+;in c language:
+;res.push_front(num.substr(i, j))
+;res.push_front(num.substr(0, i))
+;return res
+ pushToRes proc 
+ j = 8
+ i = j+4
+ result = i +4
+ lenOfOrg = res +4
+ orgString = lenOfOrg +4
+
+ itojarray = -N
+ zerotoiarray = itojarray -N 
+
+ push ebp        ;Standard prologue
+mov ebp,esp
+
+;Saving registers we use
+push esi 
+push edi 
+push eax
+push ebx
+push ecx       
+push edx
+;-----------------------------------------------------------------------------------------------
+mov eax , [ebp+i] ;eax=i
+mov ebx , [ebp+j] ;ebx = j
+mov esi , [ebp+result];esi = res
+movsx edx , [ebp+lenOfOrg] ;edx = len of org  ,for some reason only works when i use movsx..
+movsx edi ,[ebp+orgString] ;edi = org string ,for some reason only works when i use movsx..
+
+; we need to make three sub strings, so we need to free up space inside the stack
+;the len of org string is edx so we will subtruct edx from the stack 
+ 
+sub esp,edx
+
+;now we have a local array to use to store the sub strings , so lets 
+;go ahead and create those sub strings
+
+;reminder on how to use sub string:
+;when calling the function substring
+;the stack has the following 5 values (and will be sent in that order):
+;offset of input string
+;input string length
+;position (index) inside the string 
+;length of string to check from this postion 
+;the offset of the target string
+
+push edi ;push org
+push edx ;push len of org 
+push eax ;push i 
+;now we need to compute j-i becuse that is the len to check from the given position i 
+mov ecx,ebx ;ecx = j
+sub ecx,eax ;now ecx = j-i
+push  ecx ;push j-i
+lea ecx , [esp] ;now ecx points the the local array we created
+push ecx
+call subString ;now the array pointed by ecx has the subtring (i,j) (with zero at the end of course)
+
+;now lets push front 
+;reminder on how to use the push front method:
+;the function receives two zero terminated string offsets, a and b in edi and esi and appends b to the beginning of a.
+; a = [edi], b = [esi]
+push edi
+push esi 
+
+mov edi,esi ;now edi = res
+mov esi , ecx ; esi = sub string we just computed
+call PushFront 
+
+pop esi 
+pop edi 
+
+;now for part 2:
+;-----------------------------------------------------------------------------------------------
+
+;now lets us do the same proces for the sub string substr(0, i)
+
+;reminder on how to use sub string:
+;when calling the function substring
+;the stack has the following 5 values (and will be sent in that order):
+;offset of input string
+;input string length
+;position (index) inside the string 
+;length of string to check from this postion 
+;the offset of the target string
+
+push edi ;push org
+push edx ;push len of org 
+push 0 ;push 0 
+push  eax ;i
+lea ecx , [esp] ;now ecx points the the local array we created
+push ecx
+call subString ;now the array pointed by ecx has the subtring (0,i) (with zero at the end of course)
+
+;now lets push front 
+;reminder on how to use the push front method:
+;the function receives two zero terminated string offsets, a and b in edi and esi and appends b to the beginning of a.
+; a = [edi], b = [esi]
+push edi
+push esi 
+
+mov edi,esi ;now edi = res
+mov esi , ecx ; esi = sub string we just computed
+call PushFront 
+
+pop esi 
+pop edi 
+
+;-----------------------------------------------------------------------------------------------
+add esp,edx ;return esp to its natural place
+
+
+pop edx
+pop ecx
+pop ebx 
+pop eax 
+pop edi 
+pop esi
+mov esp,ebp
+pop ebp        ;Standard prologue
+
+ ret 20 ;5*4=20
+ pushToRes endp
+
+chkAddition proc
+
+ 
+ret
+chkAddition endp
 
 end my_main
 
