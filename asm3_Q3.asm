@@ -770,8 +770,138 @@ pop ebp        ;Standard prologue
  pushToRes endp
 
 chkAddition proc
+IPlusJ = 8
+NumJ = IPlusJ + 4
+NumI = NumJ+4
+ResString = NumI+4
+OriginalStringLength = ResString +4
+OriginalString = OriginalStringLength+4
 
- 
+Sum= -N
+sbString = Sum - N
+sbString2 = sbString -N
+;TODO: allocate sum on stack
+
+push ebp
+mov ebp,esp
+sub esp,8
+
+push ebx
+push esi
+push edi
+push ecx
+
+mov esi,[ebp+OriginalString]
+push esi;a
+mov ebx,[ebp+NumI]
+push ebx;a len
+call IsValid; checks if I is valid
+cmp al,0
+jz Fals
+
+mov edi,esi
+add edi,ebx
+push edi;b
+mov ecx,[ebp+NumJ]
+push ecx;b len
+call IsValid; checks if J is valid
+cmp al,0
+jz Fals
+
+mov eax,[ebp+Sum]
+push eax;res string
+push esi;I
+push edi;J
+push ebx;I Len
+push ecx;J Len
+call AddString
+
+add edi,ecx;edi=str+i+j
+mov esi,eax;esi=sum
+call CmpStr;c==sum
+cmp al,1
+jz Finish
+
+mov eax,[ebp+OriginalStringLength]
+sub eax,ebx
+sub eax,ecx
+mov ecx,eax;eax = ecx= (str+i+j).length
+
+push esi
+mov ebx,0
+;find length of sum
+lop:
+movzx eax, byte ptr [esi]
+cmp	eax,0
+jz lopend
+inc esi
+inc ebx;ebx will be the length of sum.
+jmp lop
+
+lopend:
+pop esi
+cmp ecx,ebx
+jle Fals
+push edi;edi = str+i+j
+push ecx;ecx= (str+i+j).length
+mov eax,0
+push eax
+push ebx;ebx=sum.length
+mov edi,[ebp+sbString]
+push edi
+call subString
+call CmpStr; compare (str+i+j).substring(0,sum.length) to sum
+cmp al,0
+jz Fals
+
+mov edi,[ebp+ResString]
+mov esi,[ebp+Sum]
+call PushBack
+
+;recursive call
+mov esi, [ebp+OriginalString]
+add esi, [ebp+NumI]
+push esi ;pushing original string from the 2nd number
+mov ebx,[ebp+OriginalStringLength]
+sub ebx,[ebp+NumI]
+push ebx ;original string length without first number
+mov edi,[ebp+ResString]
+push edi ;pushing result string
+
+movsx edx,[ebp+NumJ] ;edx = J
+push edx ;pushing J
+
+movsx edx,ah ;edx = j
+push edx ;pushing j
+
+mov edx,0
+mov dl,al
+add dl,ah ;now edx = i+j
+push edx ;pushing i+j
+
+call chkAddition
+
+
+
+Fals:
+mov al,0
+jmp Finish
+
+
+tru:
+mov edi,[ebp+ResString]
+mov esi,[ebp+Sum]
+call PushBack
+jmp Finish
+
+Finish:
+pop ecx
+pop edi
+pop esi
+pop ebx
+
+mov esp,ebp
+pop ebp
 ret
 chkAddition endp
 
