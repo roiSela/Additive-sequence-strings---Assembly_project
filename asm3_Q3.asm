@@ -26,6 +26,7 @@ INCLUDE ams3_Q3_data.inc
  
  n1 byte "215",0
  n2 byte "56489",0
+ moti  byte N*2+1 dup (-1)
  
  
 .code 
@@ -35,20 +36,25 @@ mov edx , OFFSET header
 call writeString			;printing the header
 
 
-;void addstring(char* resultString,char* ptr2,char* ptr1,int len2,int len1)
-;the functions put in resultstring the sum of ptr1 and ptr2 
-;for exapmle: ptr1="12" , ptr2="10" then resultstring="22" 
 
-push offset res
-push offset n2
+;when calling this function the stack has the following 5 values (and will be sent in that order):
+;offset of input string
+;input string length
+;position (index) inside the string 
+;length of string to check from this postion 
+;the offset of the target string
+
 push offset n1
-push 5
+push 3
+push 1
 push 2
-call AddString
+push offset moti
+call subString
 
 
 
-mov edx,offset res
+
+mov edx,offset moti
 call writeString
 
 call ExitProcess
@@ -583,8 +589,10 @@ mov ah,1 ;we want that "ah=j"
 	push esi ;pushing origin string 
 	push ebx ;origin string length
 	push edi ;pushing result string
+
 	movsx edx,al ;edx = i
 	push edx ;pushing i 
+
 	movsx edx,ah ;edx = j
 	push edx ;pushing j
 
@@ -592,8 +600,8 @@ mov ah,1 ;we want that "ah=j"
 	mov dl,al
 	add dl,ah ;now edx = i+j
 	push edx ;pushing i+j
-	mov dx,ax
-	
+
+	mov dx,ax ;check addition will change ax so we save it in dx for the next itaration	
 	call chkAddition ;now al=1 if the string is additive seq and 0 else
 
 	cmp al,0
@@ -617,7 +625,7 @@ mov ah,1 ;we want that "ah=j"
 	ret ;were done
 	
 	continue:
-	mov ax,dx ;restoring dx because chkaddition changed it
+	mov ax,dx ;restoring ax because chkaddition changed it
 	inc ah
 	LOOP L2
 
@@ -656,10 +664,16 @@ isAddSeq endp
  orgString = lenOfOrg +4
 
  itojarray = -N
- zerotoiarray = itojarray -N 
+ zerotoiarray =  -N 
 
  push ebp        ;Standard prologue
 mov ebp,esp
+
+; we need to make three sub strings, so we need to free up space inside the stack
+;the len of org string is edx so we will subtruct edx from the stack 
+ 
+sub esp,edx ;esp = esp - N
+;we allocate only N bytes because we plan to reuse this space to make several sub string.
 
 ;Saving registers we use
 push esi 
@@ -675,10 +689,7 @@ mov esi , [ebp+result];esi = res
 movsx edx , [ebp+lenOfOrg] ;edx = len of org  ,for some reason only works when i use movsx..
 movsx edi ,[ebp+orgString] ;edi = org string ,for some reason only works when i use movsx..
 
-; we need to make three sub strings, so we need to free up space inside the stack
-;the len of org string is edx so we will subtruct edx from the stack 
- 
-sub esp,edx
+
 
 ;now we have a local array to use to store the sub strings , so lets 
 ;go ahead and create those sub strings
@@ -699,7 +710,7 @@ push eax ;push i
 mov ecx,ebx ;ecx = j
 sub ecx,eax ;now ecx = j-i
 push  ecx ;push j-i
-lea ecx , [esp] ;now ecx points the the local array we created
+lea ecx , [ebp+  itojarray] ;now ecx points the the local array we created
 push ecx
 call subString ;now the array pointed by ecx has the subtring (i,j) (with zero at the end of course)
 
@@ -735,7 +746,7 @@ push edi ;push org
 push edx ;push len of org 
 push 0 ;push 0 
 push  eax ;i
-lea ecx , [esp] ;now ecx points the the local array we created
+lea ecx , [ebp+ zerotoiarray] ;now ecx points the the local array we created
 push ecx
 call subString ;now the array pointed by ecx has the subtring (0,i) (with zero at the end of course)
 
@@ -754,8 +765,6 @@ pop esi
 pop edi 
 
 ;-----------------------------------------------------------------------------------------------
-add esp,edx ;return esp to its natural place
-
 
 pop edx
 pop ecx
