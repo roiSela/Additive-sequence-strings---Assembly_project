@@ -31,7 +31,7 @@ my_main PROC
 mov edx , OFFSET header
 call writeString			;printing the header
 
-
+	
 ;this function gets the origin string address in esi
 ;its len in ebx
 ;and the addres of the result string in edi
@@ -719,15 +719,13 @@ call subString ;now the array pointed by ecx has the subtring (i,j) (with zero a
 ;reminder on how to use the push front method:
 ;the function receives two zero terminated string offsets, a and b in edi and esi and appends b to the beginning of a.
 ; a = [edi], b = [esi]
-push edi
-push esi 
 
 mov edi,esi ;now edi = res
 lea esi , [ebp+  itojarray] ; esi = sub string we just computed
+
 call PushFront 
 
-pop esi 
-pop edi 
+
 
 ;now for part 2:
 ;-----------------------------------------------------------------------------------------------
@@ -749,7 +747,8 @@ push edi ;push org
 mov edx , [ebp+lenOfOrg] ;edx = len of org  
 push edx ;push len of org 
 
-push 0 ;push 0 
+mov eax,0
+push eax ;push 0 
 
 mov eax , [ebp+i] ;eax=i
 push  eax ;i
@@ -763,15 +762,13 @@ call subString ;now the array pointed by ecx has the subtring (0,i) (with zero a
 ;reminder on how to use the push front method:
 ;the function receives two zero terminated string offsets, a and b in edi and esi and appends b to the beginning of a.
 ; a = [edi], b = [esi]
-push edi
-push esi 
+
 
 mov edi,[ebp+result] ;now edi = res
 lea esi , [ebp+ zerotoiarray] ; esi = sub string we just computed
 call PushFront 
 
-pop esi 
-pop edi 
+
 
 ;-----------------------------------------------------------------------------------------------
 
@@ -781,6 +778,7 @@ pop ebx
 pop eax 
 pop edi 
 pop esi
+
 mov esp,ebp
 pop ebp        ;Standard prologue
 
@@ -952,6 +950,7 @@ jz Fals
 
 mov edi,[ebp+ResString]
 lea esi,[ebp+Sum]
+call addspace 
 call PushBack
 
 ;recursive call
@@ -977,7 +976,8 @@ add edx,[ebp+NumJ];edx=len of sum + j
 push edx
 
 call chkAddition
-
+cmp al,1
+jz Finish
 
 
 Fals:
@@ -986,8 +986,10 @@ jmp Finish
 
 
 tru:
+
 mov edi,[ebp+ResString]
 lea esi,[ebp+Sum]
+call addspace 
 call PushBack
 jmp Finish
 
@@ -1001,6 +1003,27 @@ mov esp,ebp
 pop ebp
 ret 24
 chkAddition endp
+
+;edi is the string and we add space at the end of it 
+addspace PROC uses edi eax ebx  
+space = 32 
+
+lop:
+movzx eax ,byte ptr [edi]
+cmp eax,0
+jz ender
+inc edi
+jmp lop 
+
+ender:
+mov al,space
+mov [edi],al
+inc edi 
+mov al,0
+mov [edi],al
+
+ret 
+addspace endp 
 
 
 
