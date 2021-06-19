@@ -48,6 +48,7 @@ call isAddSeq
 
 cmp al,0
 jz endProgram
+
 mov  edx ,offset res
 call writestring
 
@@ -620,7 +621,8 @@ mov ah,1 ;we want that "ah=j"
 	push  eax ;push j
 	call pushToRes
 	mov al,1
-	ret ;were done
+	pop ecx
+	jmp jumpto
 	
 	continue:
 	mov ax,dx ;restoring ax because chkaddition changed it
@@ -637,6 +639,8 @@ LOOP L1
 ; doesn't have any additive sequence
 
 mov al,0
+
+jumpto:
 ret
 isAddSeq endp
 
@@ -658,7 +662,7 @@ isAddSeq endp
  j = 8
  i = j+4
  result = i +4
- lenOfOrg = res +4
+ lenOfOrg = result +4
  orgString = lenOfOrg +4
 
  itojarray = -N
@@ -684,8 +688,8 @@ push edx
 mov eax , [ebp+i] ;eax=i
 mov ebx , [ebp+j] ;ebx = j
 mov esi , [ebp+result];esi = res
-movsx edx , [ebp+lenOfOrg] ;edx = len of org  ,for some reason only works when i use movsx..
-movsx edi ,[ebp+orgString] ;edi = org string ,for some reason only works when i use movsx..
+mov edx , [ebp+lenOfOrg] ;edx = len of org  ,for some reason only works when i use movsx..
+mov edi ,[ebp+orgString] ;edi = org string ,for some reason only works when i use movsx..
 
 
 
@@ -704,10 +708,9 @@ movsx edi ,[ebp+orgString] ;edi = org string ,for some reason only works when i 
 push edi ;push org
 push edx ;push len of org 
 push eax ;push i 
-;now we need to compute j-i becuse that is the len to check from the given position i 
+;now we need to compute j becuse that is the len to check from the given position i 
 mov ecx,ebx ;ecx = j
-sub ecx,eax ;now ecx = j-i
-push  ecx ;push j-i
+push  ecx ;push j
 lea ecx , [ebp+  itojarray] ;now ecx points the the local array we created
 push ecx
 call subString ;now the array pointed by ecx has the subtring (i,j) (with zero at the end of course)
@@ -720,7 +723,7 @@ push edi
 push esi 
 
 mov edi,esi ;now edi = res
-mov esi , ecx ; esi = sub string we just computed
+lea esi , [ebp+  itojarray] ; esi = sub string we just computed
 call PushFront 
 
 pop esi 
@@ -740,12 +743,20 @@ pop edi
 ;length of string to check from this postion 
 ;the offset of the target string
 
+mov edi ,[ebp+orgString] ;edi = org string 
 push edi ;push org
+
+mov edx , [ebp+lenOfOrg] ;edx = len of org  
 push edx ;push len of org 
+
 push 0 ;push 0 
+
+mov eax , [ebp+i] ;eax=i
 push  eax ;i
+
 lea ecx , [ebp+ zerotoiarray] ;now ecx points the the local array we created
 push ecx
+
 call subString ;now the array pointed by ecx has the subtring (0,i) (with zero at the end of course)
 
 ;now lets push front 
@@ -755,8 +766,8 @@ call subString ;now the array pointed by ecx has the subtring (0,i) (with zero a
 push edi
 push esi 
 
-mov edi,esi ;now edi = res
-mov esi , ecx ; esi = sub string we just computed
+mov edi,[ebp+result] ;now edi = res
+lea esi , [ebp+ zerotoiarray] ; esi = sub string we just computed
 call PushFront 
 
 pop esi 
