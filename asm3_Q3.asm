@@ -24,10 +24,6 @@ INCLUDE ams3_Q3_data.inc
 .data
  header byte "roi sela , ID:208199679 , and Or Othnay ID:315856674 ",10,13,0
  
- n1 byte "215",0
- n2 byte "56489",0
- moti  byte N*2+1 dup (-1)
- 
  
 .code 
 my_main PROC
@@ -36,26 +32,27 @@ mov edx , OFFSET header
 call writeString			;printing the header
 
 
+;this function gets the origin string address in esi
+;its len in ebx
+;and the addres of the result string in edi
 
-;when calling this function the stack has the following 5 values (and will be sent in that order):
-;offset of input string
-;input string length
-;position (index) inside the string 
-;length of string to check from this postion 
-;the offset of the target string
+;we return: 1 in al if the origin string is an addetive sequence and 0 else
 
-push offset n1
-push 3
-push 1
-push 2
-push offset moti
-call subString
+mov esi,offset num
+mov ebx , N
+mov edi , offset res
+
+call isAddSeq
 
 
 
+cmp al,0
+jz endProgram
+mov  edx ,offset res
+call writestring
 
-mov edx,offset moti
-call writeString
+
+endProgram:
 
 call ExitProcess
 my_main ENDP
@@ -63,8 +60,9 @@ my_main ENDP
 
 ;gets paramaters throght stack 
 
-;first,gets address of string in esi
-;and then size in ebx 
+;gets throght the stack 2 parametrs:
+;first we push the offset of the string 
+;second the size of the string 
 ; Checks whether num is valid or not, by checking first character and size
 ;returns 0 in al if not valid and 1 if valid
 IsValid PROC
@@ -802,37 +800,47 @@ push esi
 push edi
 push ecx
 
+;checking if a string is valid
 mov esi,[ebp+OriginalString]
 push esi;a
-mov ebx,[ebp+NumJ]
-sub ebx,[ebp+NumI]
+
+mov ebx,[ebp+NumI]
 push ebx;a len
+
 call IsValid; checks if I is valid
 cmp al,0
 jz Fals
 
+;CHECKS IF B IS VALID
 mov edi,esi
-add edi,[ebp+NumJ]
+add edi,[ebp+NumI]
 push edi;b
-mov ecx,[ebp+IPlusJ]
-sub ecx,[ebp+NumJ]
+mov ecx,[ebp+NumJ]
 push ecx;b len
 call IsValid; checks if J is valid
 cmp al,0
 jz Fals
+;-------------------------------------
 
-push esi
-push edi
+
+;A reminder on how sub string works:
+;when calling this function the stack has the following 5 values (and will be sent in that order):
+;offset of input string
+;input string length
+;position (index) inside the string 
+;length of string to check from this postion 
+;the offset of the target string
+
+
 
 ;create substring from a
 mov eax,[ebp+OriginalString]
 push eax
 mov eax,[ebp+OriginalStringLength]
 push eax
-mov eax,[ebp+NumI]
+mov eax,0
 push eax
-mov eax,[ebp+NumJ]
-sub eax,[ebp+NumI]
+MOV eax,[ebp+NumI]
 push eax
 lea eax,[ebp+sbString]
 push eax
@@ -841,16 +849,21 @@ call subString
 ;create substring from b
 mov eax,[ebp+OriginalString]
 push eax
+
 mov eax,[ebp+OriginalStringLength]
 push eax
+
+mov eax,[ebp+NumI]
+push eax
+
 mov eax,[ebp+NumJ]
 push eax
-mov eax,[ebp+IPlusJ]
-sub eax,[ebp+NumJ]
-push eax
+
 lea eax,[ebp+sbString2]
 push eax
 call subString
+
+;now we create sum string
 
 lea eax,[ebp+Sum]
 push eax;res string
@@ -858,22 +871,31 @@ lea eax,[ebp+sbString]
 push eax
 lea eax,[ebp+sbString2]
 push eax
-push ebx;I Len
-push ecx;J Len
+push ebx;a Len
+push ecx;b len
 call AddString
 
-pop edi
-pop esi
 
-add edi,ecx;edi=str+i+j
-mov esi,eax;esi=sum
-call CmpStr;c==sum
+
+;--------------------------------------
+
+mov edi , [ebp+OriginalString]
+add edi,[ebp+IPlusJ] ;EDI = C
+
+lea esi,[ebp+Sum] ;Esi = SUM
+
+
+call CmpStr;check if c==sum
 cmp al,1
-jz Finish
+jz tru
+
+;---------------------------------------
+
 
 mov eax,[ebp+OriginalStringLength]
-sub eax,ebx
-sub eax,ecx
+sub eax ,1
+sub eax , [ebp + IPlusJ] ;EAX = LEN OF C
+
 mov ecx,eax;eax = ecx= c.length
 
 push esi
@@ -890,15 +912,29 @@ jmp lop
 lopend:
 pop esi
 cmp ecx,ebx
-jle Fals
-push edi;edi = str+i+j
-push ecx;ecx= (str+i+j).length
-mov eax,0
+jle Fals ;JUMP IF LESS OR EQUAL
+
+
+;-------------------------------------------
+;creating sub string from c in len of sum
+mov eax,[ebp +OriginalString]
 push eax
-push ebx;ebx=sum.length
-lea edi,[ebp+sbString]
-push edi
+
+MOV eax ,[ebp+OriginalStringLength]
+push eax
+
+mov eax ,[ebp + IPlusJ]
+push eax 
+
+push ebx ;pushing length of string 
+
+lea eax , [ebp + sbString]
+push eax 
+
 call subString
+;----------------------------------------------------
+lea esi, [ebp + sbString]
+lea edi , [ebp + sum]
 call CmpStr; compare (str+i+j).substring(0,sum.length) to sum
 cmp al,0
 jz Fals
@@ -909,19 +945,24 @@ call PushBack
 
 ;recursive call
 mov esi, [ebp+OriginalString]
+add esi , [ebp+NumI]
 push esi ;pushing original string.
+
 mov eax,[ebp+OriginalStringLength]
+SUB eax ,[ebp+NumI]
 push eax
+
+
 mov edi,[ebp+ResString]
 push edi ;pushing result string
 
 mov edx,[ebp+NumJ] ;edx = J
 push edx ;pushing J as first number
 
-mov edx,[ebp+IPlusJ] ;edx = i+j
+mov edx,ebx ;edx =len of sum
 push edx ;pushing "sum" as the 2nd number
 
-add edx,ebx;edx=i+j+sum.length
+add edx,[ebp+NumJ];edx=len of sum + j
 push edx
 
 call chkAddition
@@ -949,6 +990,8 @@ mov esp,ebp
 pop ebp
 ret 24
 chkAddition endp
+
+
 
 end my_main
 
