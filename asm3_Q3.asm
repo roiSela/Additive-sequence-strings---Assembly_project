@@ -31,7 +31,6 @@ my_main PROC
 mov edx , OFFSET header
 call writeString			;printing the header
 
-	
 ;this function gets the origin string address in esi
 ;its len in ebx
 ;and the addres of the result string in edi
@@ -665,8 +664,8 @@ isAddSeq endp
  lenOfOrg = result +4
  orgString = lenOfOrg +4
 
- itojarray = -N
- zerotoiarray =  -N 
+ itojarray = -N-1
+ zerotoiarray =itojarray  -N -1
 
  push ebp        ;Standard prologue
 mov ebp,esp
@@ -674,7 +673,8 @@ mov ebp,esp
 ; we need to make three sub strings, so we need to free up space inside the stack
 ;the len of org string is edx so we will subtruct edx from the stack 
  
-sub esp,edx ;esp = esp - N
+sub esp,N+1 ;esp = esp - N
+sub esp,N+1 ;esp = esp - N
 ;we allocate only N bytes because we plan to reuse this space to make several sub string.
 
 ;Saving registers we use
@@ -708,9 +708,7 @@ mov edi ,[ebp+orgString] ;edi = org string ,for some reason only works when i us
 push edi ;push org
 push edx ;push len of org 
 push eax ;push i 
-;now we need to compute j becuse that is the len to check from the given position i 
-mov ecx,ebx ;ecx = j
-push  ecx ;push j
+PUSH EBX 
 lea ecx , [ebp+  itojarray] ;now ecx points the the local array we created
 push ecx
 call subString ;now the array pointed by ecx has the subtring (i,j) (with zero at the end of course)
@@ -720,9 +718,10 @@ call subString ;now the array pointed by ecx has the subtring (i,j) (with zero a
 ;the function receives two zero terminated string offsets, a and b in edi and esi and appends b to the beginning of a.
 ; a = [edi], b = [esi]
 
-mov edi,esi ;now edi = res
-lea esi , [ebp+  itojarray] ; esi = sub string we just computed
 
+
+mov edi, [ebp+result] ;now edi = res
+lea esi , [ebp+  itojarray] ; esi = sub string we just computed
 call PushFront 
 
 
@@ -762,11 +761,15 @@ call subString ;now the array pointed by ecx has the subtring (0,i) (with zero a
 ;reminder on how to use the push front method:
 ;the function receives two zero terminated string offsets, a and b in edi and esi and appends b to the beginning of a.
 ; a = [edi], b = [esi]
-
+lea edi , [ebp+ zerotoiarray]
+call addspace
 
 mov edi,[ebp+result] ;now edi = res
+
 lea esi , [ebp+ zerotoiarray] ; esi = sub string we just computed
+
 call PushFront 
+
 
 
 
@@ -793,16 +796,16 @@ ResString = NumI+4
 OriginalStringLength = ResString +4
 OriginalString = OriginalStringLength+4
 
-Sum= -N
-sbString = Sum - N
-sbString2 = sbString -N
+Sum= -N-1
+sbString = Sum - N-1
+sbString2 = sbString -N-1
 
 push ebp
 mov ebp,esp
 
-sub esp,N
-sub esp,N
-sub esp,N;allocating sum and 2 substrings
+sub esp,N+1
+sub esp,N+1
+sub esp,N+1;allocating sum and 2 substrings
 
 push ebx
 push esi
@@ -966,14 +969,14 @@ push eax
 mov edi,[ebp+ResString]
 push edi ;pushing result string
 
-mov edx,[ebp+NumJ] ;edx = J
-push edx ;pushing J as first number
+mov eax,[ebp+NumJ] ;edx = J
+push eax  ;pushing J as first number
 
-mov edx,ebx ;edx =len of sum
-push edx ;pushing "sum" as the 2nd number
+mov eax,ebx ;edx =len of sum
+push eax ;pushing "sum" as the 2nd number
 
-add edx,[ebp+NumJ];edx=len of sum + j
-push edx
+add eax,[ebp+NumJ];edx=len of sum + j
+push eax
 
 call chkAddition
 cmp al,1
