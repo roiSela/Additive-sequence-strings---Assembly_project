@@ -779,9 +779,175 @@ pop ebp        ;Standard prologue
  pushToRes endp
 
 chkAddition proc
+IPlusJ = 8
+NumJ = IPlusJ + 4
+NumI = NumJ+4
+ResString = NumI+4
+OriginalStringLength = ResString +4
+OriginalString = OriginalStringLength+4
 
- 
-ret
+Sum= -N
+sbString = Sum - N
+sbString2 = sbString -N
+
+push ebp
+mov ebp,esp
+
+sub esp,N
+sub esp,N
+sub esp,N;allocating sum and 2 substrings
+
+push ebx
+push esi
+push edi
+push ecx
+
+mov esi,[ebp+OriginalString]
+push esi;a
+mov ebx,[ebp+NumJ]
+sub ebx,[ebp+NumI]
+push ebx;a len
+call IsValid; checks if I is valid
+cmp al,0
+jz Fals
+
+mov edi,esi
+add edi,[ebp+NumJ]
+push edi;b
+mov ecx,[ebp+IPlusJ]
+sub ecx,[ebp+NumJ]
+push ecx;b len
+call IsValid; checks if J is valid
+cmp al,0
+jz Fals
+
+push esi
+push edi
+
+;create substring from a
+mov eax,[ebp+OriginalString]
+push eax
+mov eax,[ebp+OriginalStringLength]
+push eax
+mov eax,[ebp+NumI]
+push eax
+mov eax,[ebp+NumJ]
+sub eax,[ebp+NumI]
+push eax
+mov eax,[ebp+sbString]
+push eax
+call subString	
+
+;create substring from b
+mov eax,[ebp+OriginalString]
+push eax
+mov eax,[ebp+OriginalStringLength]
+push eax
+mov eax,[ebp+NumJ]
+push eax
+mov eax,[ebp+IPlusJ]
+sub eax,[ebp+NumJ]
+push eax
+mov eax,[ebp+sbString2]
+push eax
+call subString
+
+mov eax,[ebp+Sum] ;;;;;;;needs offset?
+push eax;res string
+mov eax,[ebp+sbString]
+push eax
+mov eax,[ebp+sbString2]
+push eax
+push ebx;I Len
+push ecx;J Len
+call AddString
+
+pop edi
+pop esi
+
+add edi,ecx;edi=str+i+j
+mov esi,eax;esi=sum
+call CmpStr;c==sum
+cmp al,1
+jz Finish
+
+mov eax,[ebp+OriginalStringLength]
+sub eax,ebx
+sub eax,ecx
+mov ecx,eax;eax = ecx= c.length
+
+push esi
+mov ebx,0
+;find length of sum
+lop:
+movzx eax, byte ptr [esi]
+cmp	eax,0
+jz lopend
+inc esi
+inc ebx;ebx will be the length of sum.
+jmp lop
+
+lopend:
+pop esi
+cmp ecx,ebx
+jle Fals
+push edi;edi = str+i+j
+push ecx;ecx= (str+i+j).length
+mov eax,0
+push eax
+push ebx;ebx=sum.length
+mov edi,[ebp+sbString]
+push edi
+call subString
+call CmpStr; compare (str+i+j).substring(0,sum.length) to sum
+cmp al,0
+jz Fals
+
+mov edi,[ebp+ResString]
+mov esi,[ebp+Sum]
+call PushBack
+
+;recursive call
+mov esi, [ebp+OriginalString]
+push esi ;pushing original string.
+mov eax,[ebp+OriginalStringLength]
+push eax
+mov edi,[ebp+ResString]
+push edi ;pushing result string
+
+mov edx,[ebp+NumJ] ;edx = J
+push edx ;pushing J as first number
+
+mov edx,[ebp+IPlusJ] ;edx = i+j
+push edx ;pushing "sum" as the 2nd number
+
+add edx,ebx;edx=i+j+sum.length
+push edx
+
+call chkAddition
+
+
+
+Fals:
+mov al,0
+jmp Finish
+
+
+tru:
+mov edi,[ebp+ResString]
+mov esi,[ebp+Sum]
+call PushBack
+jmp Finish
+
+Finish:
+pop ecx
+pop edi
+pop esi
+pop ebx
+
+mov esp,ebp
+pop ebp
+ret 24
 chkAddition endp
 
 end my_main
