@@ -834,7 +834,7 @@ push eax
 mov eax,[ebp+NumJ]
 sub eax,[ebp+NumI]
 push eax
-mov eax,[ebp+sbString]
+lea eax,[ebp+sbString]
 push eax
 call subString	
 
@@ -848,15 +848,15 @@ push eax
 mov eax,[ebp+IPlusJ]
 sub eax,[ebp+NumJ]
 push eax
-mov eax,[ebp+sbString2]
+lea eax,[ebp+sbString2]
 push eax
 call subString
 
-mov eax,[ebp+Sum] ;;;;;;;needs offset?
+lea eax,[ebp+Sum]
 push eax;res string
-mov eax,[ebp+sbString]
+lea eax,[ebp+sbString]
 push eax
-mov eax,[ebp+sbString2]
+lea eax,[ebp+sbString2]
 push eax
 push ebx;I Len
 push ecx;J Len
@@ -896,7 +896,7 @@ push ecx;ecx= (str+i+j).length
 mov eax,0
 push eax
 push ebx;ebx=sum.length
-mov edi,[ebp+sbString]
+lea edi,[ebp+sbString]
 push edi
 call subString
 call CmpStr; compare (str+i+j).substring(0,sum.length) to sum
@@ -904,7 +904,7 @@ cmp al,0
 jz Fals
 
 mov edi,[ebp+ResString]
-mov esi,[ebp+Sum]
+lea esi,[ebp+Sum]
 call PushBack
 
 ;recursive call
@@ -935,7 +935,7 @@ jmp Finish
 
 tru:
 mov edi,[ebp+ResString]
-mov esi,[ebp+Sum]
+lea esi,[ebp+Sum]
 call PushBack
 jmp Finish
 
