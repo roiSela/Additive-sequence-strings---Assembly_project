@@ -780,11 +780,13 @@ OriginalString = OriginalStringLength+4
 Sum= -N
 sbString = Sum - N
 sbString2 = sbString -N
-;TODO: allocate sum on stack
 
 push ebp
 mov ebp,esp
-sub esp,8
+
+sub esp,N
+sub esp,N
+sub esp,N;allocating sum and 2 substrings
 
 push ebx
 push esi
@@ -793,28 +795,66 @@ push ecx
 
 mov esi,[ebp+OriginalString]
 push esi;a
-mov ebx,[ebp+NumI]
+mov ebx,[ebp+NumJ]
+sub ebx,[ebp+NumI]
 push ebx;a len
 call IsValid; checks if I is valid
 cmp al,0
 jz Fals
 
 mov edi,esi
-add edi,ebx
+add edi,[ebp+NumJ]
 push edi;b
-mov ecx,[ebp+NumJ]
+mov ecx,[ebp+IPlusJ]
+sub ecx,[ebp+NumJ]
 push ecx;b len
 call IsValid; checks if J is valid
 cmp al,0
 jz Fals
 
-mov eax,[ebp+Sum]
+push esi
+push edi
+
+;create substring from a
+mov eax,[ebp+OriginalString]
+push eax
+mov eax,[ebp+OriginalStringLength]
+push eax
+mov eax,[ebp+NumI]
+push eax
+mov eax,[ebp+NumJ]
+sub eax,[ebp+NumI]
+push eax
+mov eax,[ebp+sbString]
+push eax
+call subString	
+
+;create substring from b
+mov eax,[ebp+OriginalString]
+push eax
+mov eax,[ebp+OriginalStringLength]
+push eax
+mov eax,[ebp+NumJ]
+push eax
+mov eax,[ebp+IPlusJ]
+sub eax,[ebp+NumJ]
+push eax
+mov eax,[ebp+sbString2]
+push eax
+call subString
+
+mov eax,[ebp+Sum] ;;;;;;;needs offset?
 push eax;res string
-push esi;I
-push edi;J
+mov eax,[ebp+sbString]
+push eax
+mov eax,[ebp+sbString2]
+push eax
 push ebx;I Len
 push ecx;J Len
 call AddString
+
+pop edi
+pop esi
 
 add edi,ecx;edi=str+i+j
 mov esi,eax;esi=sum
@@ -825,7 +865,7 @@ jz Finish
 mov eax,[ebp+OriginalStringLength]
 sub eax,ebx
 sub eax,ecx
-mov ecx,eax;eax = ecx= (str+i+j).length
+mov ecx,eax;eax = ecx= c.length
 
 push esi
 mov ebx,0
@@ -860,24 +900,20 @@ call PushBack
 
 ;recursive call
 mov esi, [ebp+OriginalString]
-add esi, [ebp+NumI]
-push esi ;pushing original string from the 2nd number
-mov ebx,[ebp+OriginalStringLength]
-sub ebx,[ebp+NumI]
-push ebx ;original string length without first number
+push esi ;pushing original string.
+mov eax,[ebp+OriginalStringLength]
+push eax
 mov edi,[ebp+ResString]
 push edi ;pushing result string
 
-movsx edx,[ebp+NumJ] ;edx = J
-push edx ;pushing J
+mov edx,[ebp+NumJ] ;edx = J
+push edx ;pushing J as first number
 
-movsx edx,ah ;edx = j
-push edx ;pushing j
+mov edx,[ebp+IPlusJ] ;edx = i+j
+push edx ;pushing "sum" as the 2nd number
 
-mov edx,0
-mov dl,al
-add dl,ah ;now edx = i+j
-push edx ;pushing i+j
+add edx,ebx;edx=i+j+sum.length
+push edx
 
 call chkAddition
 
@@ -902,7 +938,7 @@ pop ebx
 
 mov esp,ebp
 pop ebp
-ret
+ret 24
 chkAddition endp
 
 end my_main
